@@ -1,75 +1,29 @@
-//handlelogin
-async function loginFormHandler(event) {
+// Handler function for chess login form submission
+const chessLoginFormHandler = async (event) => {
   event.preventDefault();
-  const email = document.querySelector("#email-login").value.trim();
-  const password = document.querySelector("#password-login").value.trim();
-
-  //make sure they are filled
-  if (email && password) {
-    const response = await fetch("/api/users/login", {
-      method: "post",
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-      headers: { "Content-Type": "application/json" },
+  // Get the values of the username and password input fields
+  const username = document.querySelector('#username-chess-login').value.trim();
+  const password = document.querySelector('#password-chess-login').value.trim();
+  // If the input fields have values
+  if (username && password) {
+        // Send a POST request to the login endpoint with the input values as JSON data
+    const response = await fetch('/api/users/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
-
+    // If the request was successful, redirect to the homepage
     if (response.ok) {
-      console.log(response, " Logged in successfully!");
-      document.location.replace("/");
+      document.location.replace('/'); // When successful, load the homepage
     } else {
-      alert(response.statusText);
+            // If the request was unsuccessful, show an alert
+      alert('Failed to log in.'); // When unsuccessful, show alert
     }
   }
+};
+
+// Event listener for the chess login form
+const chessLoginForm = document.querySelector('.chess-login-form');
+if (chessLoginForm) {
+  chessLoginForm.addEventListener('submit', chessLoginFormHandler);
 }
-
-//handle signup/register
-async function signupFormHandler(event) {
-  event.preventDefault();
-  const username = document.querySelector("#username-signup").value.trim();
-  const email = document.querySelector("#email-signup").value.trim();
-  const password = document.querySelector("#password-signup").value.trim();
-  //check to make sure all fields have values
-  if (username && email && password) {
-    const response = await fetch("/api/users", {
-      method: "post",
-      body: JSON.stringify({
-        username,
-        email,
-        password,
-      }),
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (response.ok) {
-      console.log(response);
-    } else {
-      alert(response.statusText);
-    }
-    //then we send in a request to log into the webpage
-    const responseTwo = await fetch("/api/users/login", {
-      method: "post",
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (responseTwo.ok) {
-      console.log(response, " Logged in successfully!");
-      document.location.replace("/");
-    } else {
-      alert(response.statusText);
-    }
-  }
-}
-//Add event listeners to the buttons
-document
-  .querySelector("#login-btn")
-  .addEventListener("click", loginFormHandler);
-
-document
-  .querySelector("#signup-btn")
-  .addEventListener("click", signupFormHandler);

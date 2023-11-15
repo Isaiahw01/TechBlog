@@ -1,149 +1,125 @@
+// Import necessary packages and models
 const router = require("express").Router();
-const { User, Post, Comment } = require("../models");
-const sequelize = require("../config/connection");
-//home route server homepage
-router.get("/", (req, res) => {
-  //we need to get all posts
-  Post.findAll({
-    attributes: ["id", "title", "body", "user_id"],
-    include: [
-      {
-        model: User,
-        as: "user",
-        attributes: ["username"],
-      },
-      {
-        model: Comment,
-        as: "comments",
-        attributes: ["id", "comment_text", "user_id"],
-      },
-    ],
-  })
-    .then((dbPostData) => {
-      //serialize data
-      if (!dbPostData) {
-        res.status(404).json({ message: "No Posts Available" });
-        return;
-      }
-      const posts = dbPostData.map((post) => post.get({ plain: true })); // serialize all the posts
-      console.log(posts);
-      res.render("home", { posts, loggedIn: req.session.loggedIn });
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json(err);
+const { Post, User, Comment } = require("../models");
+const withAuth = require("../utils/auth");
+
+// Route to render homepage
+router.get("/", async (req, res) => {
+  try {
+        // Find all posts with associated usernames
+    const postData = await Post.findAll({
+      include: [{ model: User, attributes: ["username"] }],
     });
+    // Convert post data to plain JavaScript object
+    const posts = postData.map((post) => post.get({ plain: true }));
+    // Render homepage template with posts and login status
+    res.render("homepage", {
+      posts,
+      logged_in: req.session.logged_in,
+    });
+  } catch (err) {
+        // If there is an error, return 500 status code and error message
+    res.status(500).json(err);
+  }
+});
+// Route to render individual post page
+router.get("/post/:id", withAuth, async (req, res) => {
+  try {
+        // Find post by ID with associated username and comments with associated usernames
+    const postData = await Post.findByPk(req.params.id, {
+      include: [
+        { model: User, attributes: ["username"] },
+        {
+          model: Comment,
+          include: [{ model: User, attributes: ["username"] }],
+        },
+      ],
+    });
+    // Convert post data to plain JavaScript object
+    const post = postData.get({ plain: true });
+    // Render post template with post data and login status
+    res.render("post", {
+      ...post,
+      logged_in: req.session.logged_in,
+    });
+  } catch (err) {
+        // If there is an error, return 500 status code and error message
+    res.status(500).json(err);
+  }
+});
+// Route to render dashboard page with all posts by current user
+// Find all posts by current user with associated usernames
+router.get("/dashboard", withAuth, async (req, res) => {
+  try {
+    const postData = await Post.findAll({
+      where: { user_id: req.session.user_id },
+      include: [{ model: User, attributes: ["username"] }],
+    });
+    // Convert post data to plain JavaScript object
+    const posts = postData.map((post) => post.get({ plain: true }));
+
+    res.render("dashboard", {
+      posts,
+      logged_in: req.session.logged_in,
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
 
-//serve up the single post page
-router.get("/viewpost/:id", (req, res) => {
-  //we need to get all posts
-  Post.findOne({
-    where: {
-      id: req.params.id,
-    },
-    attributes: ["id", "title", "body", "user_id"],
-    include: [
-      {
-        model: User,
-        as: "user",
-        attributes: ["username"],
-      },
-      {
-        model: Comment,
-        as: "comments",
-        attributes: ["id", "comment_text", "user_id"],
-        include: [
-          {
-            model: User,
-            as: "user",
-            attributes: ["username"],
-          },
-        ],
-      },
-    ],
-  })
-    .then((dbPostData) => {
-      //serialize data
-      if (!dbPostData) {
-        res.status(404).json({ message: "No Posts Available" });
-        return;
-      }
-      const post = dbPostData.get({ plain: true }); // serialize all the posts
-      console.log(post);
-      const myPost = post.user_id == req.session.user_id;
-      res.render("single-post", {
-        post,
-        loggedIn: req.session.loggedIn,
-        currentUser: myPost,
-      });
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json(err);
-    });
-});
-
-//serve up the login page
 router.get("/login", (req, res) => {
-  console.log("Is logged in?", req.session.loggedIn);
-  res.render("login", { loggedIn: req.session.loggedIn });
+  if (req.session.logged_in) {
+    res.redirect("/dashboard");
+    return;
+  }
+  res.render("login");
 });
 
-//serve up the dashboard
-router.get("/dashboard", (req, res) => {
-  //we need to get all posts
-  console.log(req.session.user_id, " this is the session id");
-  Post.findAll({
-    where: {
-      user_id: req.session.user_id,
-    },
-    attributes: ["id", "title", "body", "user_id"],
-    include: [
-      {
-        model: User,
-        as: "user",
-        attributes: ["username"],
-      },
-      {
-        model: Comment,
-        as: "comments",
-        attributes: ["id", "comment_text", "user_id"],
-        include: [
-          {
-            model: User,
-            as: "user",
-            attributes: ["username"],
-          },
-        ],
-      },
-    ],
-  })
-    .then((dbPostData) => {
-      //serialize data
-      if (!dbPostData) {
-        res.status(404).json({ message: "No Posts Available" });
-        return;
-      }
-      const posts = dbPostData.map((post) => post.get({ plain: true })); // serialize all the posts
-      console.log(posts);
-      res.render("dashboard", { posts, loggedIn: req.session.loggedIn });
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json(err);
+router.get("/signup", (req, res) => {
+  if (req.session.logged_in) {
+    res.redirect("/dashboard");
+    return;
+  }
+  res.render("signup");
+});
+
+//render the new post page
+router.get("/newpost", (req, res) => {
+  if (req.session.logged_in) {
+    res.render("newpost");
+    return;
+  }
+  res.redirect("/login");
+});
+
+//render the edit post page
+router.get("/editpost/:id", async (req, res) => {
+  try {
+    const postData = await Post.findByPk(req.params.id, {
+      include: [
+        { model: User, attributes: ["username"] },
+        {
+          model: Comment,
+          include: [{ model: User, attributes: ["username"] }],
+        },
+      ],
     });
-});
 
-router.get("/post", (req, res) => {
-  res.render("create-post", { loggedIn: req.session.loggedIn });
+    const post = postData.get({ plain: true });
+
+    res.render("editpost", {
+      ...post,
+      logged_in: req.session.logged_in,
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
-//load the edit page
-router.get("/edit/:id", (req, res) => {
-  //    post_id: req.postID,
-  res.render("edit-post", {
-    loggedIn: req.session.loggedIn,
-    post_id: req.params.id,
-  });
-});
+// module exports router
 module.exports = router;
+
+
+
+
+
+
