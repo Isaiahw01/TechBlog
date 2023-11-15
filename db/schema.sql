@@ -1,2 +1,0 @@
-DROP DATABASE IF EXISTS Thomas_ChessBlog;
-CREATE DATABASE Thomas_ChessBlog;

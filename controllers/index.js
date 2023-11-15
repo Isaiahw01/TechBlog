@@ -1,9 +1,11 @@
-// Import the necessary modules and routes
 const router = require("express").Router();
-const apiRoutes = require("./api");
 const homeRoutes = require("./home-routes");
-// Set up routes
-router.use("/api", apiRoutes);
+const commentRoutes = require("./api/comment-routes");
+const userRoutes = require("./api/user-routes");
+const postRoutes = require("./api/post-routes");
+//set up the route useage
 router.use("/", homeRoutes);
-// Export the router
+router.use("/api/comments", commentRoutes);
+router.use("/api/users", userRoutes);
+router.use("/api/posts", postRoutes);
 module.exports = router;

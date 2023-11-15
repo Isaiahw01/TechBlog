@@ -19,7 +19,3 @@ This is a tech blog that allows a user to post about whatever they wish. It supp
 ## Link To Application:
 
 
-
-## Written By:
-
-Vlad T

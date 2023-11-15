@@ -1,22 +1,91 @@
-// Import the required modules
 const router = require("express").Router();
-const { Comment } = require("../../models");
-const withAuth = require("../../utils/auth");
-// Create a new comment
-router.post("/", withAuth, async (req, res) => {
-  try {    
-    // Create a new comment with the provided data
-    const newComment = await Comment.create({
-      ...req.body,
-      user_id: req.session.user_id,
+const { User, Post, Comment } = require("../../models");
+//get all the comments
+router.get("/", (req, res) => {
+  Comment.findAll({
+    attributes: ["id", "comment_text", "user_id", "post_id"],
+    include: [
+      {
+        model: User,
+        as: "user",
+        attributes: ["username"],
+      },
+    ],
+  }) //include the posts and comments of this user
+    .then((dbCommentData) => {
+      res.json(dbCommentData);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json(err);
     });
-    // Send a response with the new comment data
-    res.status(200).json(newComment);
-  } catch (err) {
-    // Send an error response if something went wrong
-    res.status(400).json(err);
-  }
 });
-// Export the router
-module.exports = router;
 
+//get comment by id
+router.get("/:id", (req, res) => {
+  Comment.findOne({
+    where: {
+      id: req.params.id,
+    },
+    attributes: ["id", "comment_text", "user_id", "post_id"],
+    include: [
+      {
+        model: User,
+        as: "user",
+        attributes: ["username"],
+      },
+    ],
+  }) //include the posts and comments of this user
+    .then((dbCommentData) => {
+      if (!dbCommentData) {
+        res.status(404).json({ message: "No Comment found with this id" });
+        return;
+      }
+      res.json(dbCommentData);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json(err);
+    });
+});
+
+//add comment
+router.post("/", (req, res) => {
+  //expects comment_text, user_id, post_id
+  Comment.create({
+    comment_text: req.body.comment_text,
+    user_id: req.session.user_id,
+    post_id: req.body.post_id,
+  })
+    .then((dbCommentData) => {
+      res.json(dbCommentData);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json(err); //REST api needs status
+    });
+});
+//update comment
+router.put("/", (req, res) => {
+  res.send(`update comment`);
+});
+//remove comment
+router.delete("/:id", (req, res) => {
+  Post.destroy({
+    where: {
+      id: req.params.id,
+    },
+  })
+    .then((dbCommentData) => {
+      if (!dbCommentData) {
+        res.status(404).json({ message: "No Comment found with this id" });
+        return;
+      }
+      res.json(dbCommentData);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json(err);
+    });
+});
+module.exports = router;

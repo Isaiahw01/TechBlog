@@ -1,30 +1,31 @@
-// Import the necessary models
+// This is where we will set up relationships for the models
+// Import all the models
 const User = require("./User");
 const Post = require("./Post");
 const Comment = require("./Comment");
-// Define the relationships between the models
+
+//set up relationships
 User.hasMany(Post, {
-  foreignKey: "user_id", // Set up the foreign key relationship
+  foreignKey: "user_id",
 });
-
 Post.belongsTo(User, {
-  foreignKey: "user_id", // Set up the foreign key relationship
+  foreignKey: "user_id",
 });
-
+//associations for the commments
 Comment.belongsTo(User, {
-  foreignKey: "user_id", // Set up the foreign key relationship
+  foreignKey: "user_id",
 });
 
 Comment.belongsTo(Post, {
-  foreignKey: "post_id", // Set up the foreign key relationship
-});
-
-Post.hasMany(Comment, {
-  foreignKey: "post_id", // Set up the foreign key relationship
+  foreignKey: "post_id",
 });
 
 User.hasMany(Comment, {
-  foreignKey: "user_id", // Set up the foreign key relationship
+  foreignKey: "user_id",
 });
-// Export the models
+
+Post.hasMany(Comment, {
+  foreignKey: "post_id",
+});
+
 module.exports = { User, Post, Comment };
